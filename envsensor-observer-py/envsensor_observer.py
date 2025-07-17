@@ -91,17 +91,17 @@ def parse_events(sock, loop_count=10):
 
         if debug:
             for report in parsed_packet["advertising_reports"]:
-                print "----------------------------------------------------"
-                print "Found BLE device:", report['peer_bluetooth_address']
-                print "Raw Advertising Packet:"
-                print ble.packet_as_hex_string(pkt, flag_with_spacing=True,
-                                               flag_force_capitalize=True)
-                print ""
+                print("----------------------------------------------------")
+                print("Found BLE device:", report['peer_bluetooth_address'])
+                print("Raw Advertising Packet:")
+                print(ble.packet_as_hex_string(pkt, flag_with_spacing=True,
+                                               flag_force_capitalize=True))
+                print("")
                 for k, v in report.items():
                     if k == "payload_binary":
                         continue
-                    print "\t%s: %s" % (k, v)
-                print ""
+                    print("\t", k, ": ", v)
+                print("")
 
         for report in parsed_packet["advertising_reports"]:
             if (ble.verify_beacon_packet(report)):
@@ -114,9 +114,9 @@ def parse_events(sock, loop_count=10):
                 index = find_sensor_in_list(sensor, sensor_list)
 
                 if debug:
-                    print ("\t--- sensor data ---")
+                    print("\t--- sensor data ---")
                     sensor.debug_print()
-                    print ""
+                    print("")
 
                 lock = threading.Lock()
                 lock.acquire()
@@ -156,7 +156,7 @@ def eval_sensor_state():
             pastSec = (nowtick - sensor.tick_last_update).total_seconds()
             if (pastSec > conf.INACTIVE_TIMEOUT_SECONDS):
                 if debug:
-                    print "timeout sensor : " + sensor.bt_address
+                    print("timeout sensor : " + sensor.bt_address)
                 sensor.flag_active = False
     flag_update_sensor_status = True
     timer = threading.Timer(conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS,
@@ -166,14 +166,14 @@ def eval_sensor_state():
 
 
 def print_sensor_state():
-    print "----------------------------------------------------"
-    print ("sensor status : %s (Intvl. %ssec)" % (datetime.datetime.today(),
+    print("----------------------------------------------------")
+    print("sensor status : %s (Intvl. %ssec)" % (datetime.datetime.today(),
            conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS))
     for sensor in sensor_list:
-        print " " + sensor.bt_address, ": %s :" % sensor.sensor_type, \
-            ("ACTIVE" if sensor.flag_active else "DEAD"), \
-            "(%s)" % sensor.tick_last_update
-    print ""
+        print(" " + sensor.bt_address, ": %s :" % sensor.sensor_type,
+            ("ACTIVE" if sensor.flag_active else "DEAD"),
+            "(%s)" % sensor.tick_last_update)
+    print("")
 
 
 #  Utility function ###
@@ -218,7 +218,7 @@ def create_influx_database():
            conf.FLUENTD_INFLUXDB_PORT_STRING + "/query")
     r = requests.get(uri, params=v)
     if debug:
-        print "-- create database : " + str(r.status_code)
+        print("-- create database : " + str(r.status_code))
 
 
 # command line argument
@@ -246,20 +246,20 @@ if __name__ == "__main__":
         # reset bluetooth functionality
         try:
             if debug:
-                print "-- reseting bluetooth device"
+                print("-- reseting bluetooth device")
             ble.reset_hci()
             if debug:
-                print "-- reseting bluetooth device : success"
+                print("-- reseting bluetooth device : success")
         except Exception as e:
-            print "error enabling bluetooth device"
-            print str(e)
+            print("error enabling bluetooth device")
+            print(str(e))
             sys.exit(1)
 
         # initialize cloud (influxDB) output interface
         try:
             if conf.INFLUXDB_OUTPUT:
                 if debug:
-                    print "-- initialize influxDB interface"
+                    print("-- initialize influxDB interface")
                 influx_client = InfluxDBClient(conf.INFLUXDB_ADDRESS,
                                                conf.INFLUXDB_PORT,
                                                conf.INFLUXDB_USER,
@@ -267,33 +267,33 @@ if __name__ == "__main__":
                                                conf.INFLUXDB_DATABASE)
                 influx_client.create_database(conf.INFLUXDB_DATABASE)
                 if debug:
-                    print "-- initialize influxDB interface : success"
+                    print("-- initialize influxDB interface : success")
         except Exception as e:
-            print "error initializing influxDB output interface"
-            print str(e)
+            print("error initializing influxDB output interface")
+            print(str(e))
             sys.exit(1)
 
         # initialize fluentd forwarder
         try:
             if conf.FLUENTD_FORWARD:
                 if debug:
-                    print "-- initialize fluentd"
+                    print("-- initialize fluentd")
                 init_fluentd()
                 # create database when using influxDB through fluentd.
                 if conf.FLUENTD_INFLUXDB:
                     create_influx_database()
                 if debug:
-                    print "-- initialize fluentd : success"
+                    print("-- initialize fluentd : success")
         except Exception as e:
-            print "error initializing fluentd forwarder"
-            print str(e)
+            print("error initializing fluentd forwarder")
+            print(str(e))
             sys.exit(1)
 
         # initialize csv output interface
         try:
             if conf.CSV_OUTPUT:
                 if debug:
-                    print "-- initialize csv logger"
+                    print("-- initialize csv logger")
 
                 if not os.path.isdir(conf.CSV_DIR_PATH):
                     os.makedirs(conf.CSV_DIR_PATH)
@@ -312,56 +312,56 @@ if __name__ == "__main__":
                 log.info(envsensor.csv_header())
 
                 if debug:
-                    print "-- initialize csv logger : success"
+                    print("-- initialize csv logger : success")
         except Exception as e:
-            print "error initializing csv output interface"
-            print str(e)
+            print("error initializing csv output interface")
+            print(str(e))
             sys.exit(1)
 
         # initialize bluetooth socket
         try:
             if debug:
-                print "-- open bluetooth device"
+                print("-- open bluetooth device")
             sock = ble.bluez.hci_open_dev(conf.BT_DEV_ID)
             if debug:
-                print "-- ble thread started"
+                print("-- ble thread started")
         except Exception as e:
-            print "error accessing bluetooth device: ", str(conf.BT_DEV_ID)
-            print str(e)
+            print("error accessing bluetooth device: ", str(conf.BT_DEV_ID))
+            print(str(e))
             sys.exit(1)
 
         # set ble scan parameters
         try:
             if debug:
-                print "-- set ble scan parameters"
+                print("-- set ble scan parameters")
             ble.hci_le_set_scan_parameters(sock)
             if debug:
-                print "-- set ble scan parameters : success"
+                print("-- set ble scan parameters : success")
         except Exception as e:
-            print "failed to set scan parameter!!"
-            print str(e)
+            print("failed to set scan parameter!!")
+            print(str(e))
             sys.exit(1)
 
         # start ble scan
         try:
             if debug:
-                print "-- enable ble scan"
+                print("-- enable ble scan")
             ble.hci_le_enable_scan(sock)
             if debug:
-                print "-- ble scan started"
+                print("-- ble scan started")
         except Exception as e:
-            print "failed to activate scan!!"
-            print str(e)
+            print("failed to activate scan!!")
+            print(str(e))
             sys.exit(1)
 
         flag_scanning_started = True
-        print ("envsensor_observer : complete initialization")
-        print ""
+        print("envsensor_observer : complete initialization")
+        print("")
 
         # activate timer for sensor status evaluation
         timer = threading.Timer(conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS,
                                 eval_sensor_state)
-        timer.setDaemon(True)
+        timer.daemon = True
         timer.start()
 
         # preserve old filter setting
@@ -384,7 +384,7 @@ if __name__ == "__main__":
                 flag_update_sensor_status = False
 
     except Exception as e:
-        print "Exception: " + str(e)
+        print("Exception: " + str(e))
         import traceback
         traceback.print_exc()
         sys.exit(1)
@@ -395,4 +395,4 @@ if __name__ == "__main__":
             sock.setsockopt(ble.bluez.SOL_HCI, ble.bluez.HCI_FILTER,
                             old_filter)
             ble.hci_le_disable_scan(sock)
-        print "Exit"
+        print("Exit")

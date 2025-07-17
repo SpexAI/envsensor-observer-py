@@ -295,7 +295,7 @@ def _handle_num_completed_packets(pkt):
     pkt = pkt[1:]
     result["num_connection_handles"] = num_connection_handles
     result["handles"] = []
-    for i in xrange(num_connection_handles):
+    for i in range(num_connection_handles):
         handle, = struct.unpack("<H", pkt[0:2])
         completed_packets, = struct.unpack("<H", pkt[2:4])
         result["handles"].append(
@@ -310,7 +310,7 @@ def _handle_inquiry_result_with_rssi(pkt):
     pkt = pkt[1:]
     result["num_inquiry_results"] = num_inquiry_results
     result["inquiry_results"] = []
-    for i in xrange(num_inquiry_results):
+    for i in range(num_inquiry_results):
         addr = bluez.ba2str(pkt[(6 * i):(6 * i) + 6])
         rssi = struct.unpack("b", pkt[(13 * num_inquiry_results) + i])[0]
         result["inquiry_results"].append({"Address": addr, "RSSI": rssi})
@@ -323,7 +323,7 @@ def _handle_inquiry_result(pkt):
     pkt = pkt[1:]
     result["num_inquiry_results"] = num_inquiry_results
     result["inquiry_results"] = []
-    for i in xrange(num_inquiry_results):
+    for i in range(num_inquiry_results):
         addr = bluez.ba2str(pkt[(6 * i):(6 * i) + 6])
         result["inquiry_results"].append({"Address": addr})
     return result
@@ -332,7 +332,7 @@ def _handle_inquiry_result(pkt):
     pkt = pkt[1:]
     result["num_connection_handles"] = num_connection_handles
     result["handles"] = []
-    for i in xrange(num_connection_handles):
+    for i in range(num_connection_handles):
         handle, = struct.unpack("<H", pkt[0:2])
         completed_packets, = struct.unpack("<H", pkt[2:4])
         result["handles"].append(
@@ -348,7 +348,7 @@ def _handle_disconn_complete(pkt):
 
 def _handle_le_meta_event(pkt):
     result = {}
-    subevent, = struct.unpack("B", pkt[0])
+    subevent = pkt[0]
     result["bluetooth_le_subevent_id"] = subevent
     pkt = pkt[1:]
     if subevent == EVT_LE_ADVERTISING_REPORT:
@@ -439,17 +439,17 @@ def _handle_le_read_remote_used_features(pkt):
 
 def _handle_le_advertising_report(pkt):
     result = {}
-    num_reports = struct.unpack("<B", pkt[0])[0]
+    num_reports = pkt[0]
     report_pkt_offset = 0
     result["number_of_advertising_reports"] = num_reports
     result["advertising_reports"] = []
-    for i in xrange(0, num_reports):
+    for i in range(0, num_reports):
         report = {}
 
-        report_event_type = struct.unpack("<B", pkt[report_pkt_offset + 1])[0]
+        report_event_type = pkt[report_pkt_offset + 1]
         report["report_type_id"] = report_event_type
 
-        bdaddr_type = struct.unpack("<B", pkt[report_pkt_offset + 2])[0]
+        bdaddr_type = pkt[report_pkt_offset + 2]
         report["peer_bluetooth_address_type"] = bdaddr_type
 
         device_addr = packed_bdaddr_to_string(
@@ -458,7 +458,7 @@ def _handle_le_advertising_report(pkt):
         report["peer_bluetooth_address_s"] = \
             short_bt_address(report["peer_bluetooth_address"])
 
-        report_data_length, = struct.unpack("<B", pkt[report_pkt_offset + 9])
+        report_data_length = pkt[report_pkt_offset + 9]
         report["report_metadata_length"] = report_data_length
 
         if report_event_type == LE_ADV_IND:
@@ -491,7 +491,7 @@ def _handle_le_advertising_report(pkt):
         # Each report length is (2 (event type, bdaddr type) + 6 (the address)
         #    + 1 (data length field) + data length + 1 (rssi)) bytes long.
         report_pkt_offset = report_pkt_offset + 10 + report_data_length + 1
-        rssi, = struct.unpack("<b", pkt[report_pkt_offset - 1])
+        rssi = pkt[report_pkt_offset - 1]
         report["rssi"] = rssi
         result["advertising_reports"].append(report)
 
@@ -510,8 +510,8 @@ def get_packed_bdaddr(bdaddr_string):
 
 
 def packed_bdaddr_to_string(bdaddr_packed):
-    return ':'.join('%02x' % i for i in struct.unpack("<BBBBBB",
-                                                      bdaddr_packed[::-1]))
+    reversed_bytes = bdaddr_packed[::-1]
+    return ':'.join(f'{b:02x}' for b in reversed_bytes)
 
 
 def short_bt_address(btAddr):
@@ -524,8 +524,7 @@ def packet_as_hex_string(pkt, flag_with_spacing=False,
     space = ""
     if (flag_with_spacing):
         space = " "
-    for b in pkt:
-        packet = packet + "%02x" % struct.unpack("<B", b)[0] + space
+    packet = space.join(f"{b:02x}" for b in pkt)
     if (flag_force_capitalize):
         packet = packet.upper()
     return packet
@@ -551,8 +550,7 @@ def reset_hci():
 
 
 def get_companyid(pkt):
-    return (struct.unpack("<B", pkt[1])[0] << 8) | \
-        struct.unpack("<B", pkt[0])[0]
+    return ((pkt[1] << 8) | pkt[0])
 
 
 # verify received beacon packet format
@@ -562,24 +560,22 @@ def verify_beacon_packet(report):
     if (report["report_metadata_length"] != 31):
         return result
     # check Company ID (OMRON = 0x02D5)
-    if (struct.unpack("<B", report["payload_binary"][4])[0] !=
+    if (report["payload_binary"][4] !=
             ADV_TYPE_MANUFACTURER_SPECIFIC_DATA):
         return result
     if (get_companyid(report["payload_binary"][5:7]) != COMPANY_ID):
         return result
     # check shortened local name
-    if (struct.unpack("<B", report["payload_binary"][28])[0] ==
-            ADV_TYPE_SHORT_LOCAL_NAME):
+    if (report["payload_binary"][28] == ADV_TYPE_SHORT_LOCAL_NAME):
         if ((report["payload_binary"][29:31] == "IM") or
                 (report["payload_binary"][29:31] == "EP")):
             pass
         else:
             return result
-    elif (struct.unpack("<B", report["payload_binary"][27])[0] ==
-            ADV_TYPE_SHORT_LOCAL_NAME):
+    elif (report["payload_binary"][27] == ADV_TYPE_SHORT_LOCAL_NAME):
         if ((report["payload_binary"][28:31] == "Rbt") and
-            ((struct.unpack("<B", report["payload_binary"][7])[0] == 0x01) or
-             (struct.unpack("<B", report["payload_binary"][7])[0] == 0x02))):
+            ((report["payload_binary"][7] == 0x01) or
+             (report["payload_binary"][7] == 0x02))):
             pass
         else:
             return result
@@ -597,17 +593,17 @@ def classify_beacon_packet(report):
     elif (report["payload_binary"][29:31] == "EP"):
         return "EP"
     elif (report["payload_binary"][28:31] == "Rbt"):
-        if (struct.unpack("<B", report["payload_binary"][7])[0] == 0x01):
+        if (report["payload_binary"][7] == 0x01):
             return "Rbt 0x01"
-        elif (struct.unpack("<B", report["payload_binary"][7])[0] == 0x02):
+        elif (report["payload_binary"][7] == 0x02):
             return "Rbt 0x02"
-        elif (struct.unpack("<B", report["payload_binary"][7])[0] == 0x03):
+        elif (report["payload_binary"][7] == 0x03):
             return "Rbt 0x03"
-        elif (struct.unpack("<B", report["payload_binary"][7])[0] == 0x04):
+        elif (report["payload_binary"][7] == 0x04):
             return "Rbt 0x04"
-        elif (struct.unpack("<B", report["payload_binary"][7])[0] == 0x05):
+        elif (report["payload_binary"][7] == 0x05):
             return "Rbt 0x05"
-        elif (struct.unpack("<B", report["payload_binary"][7])[0] == 0x06):
+        elif (report["payload_binary"][7] == 0x06):
             return "Rbt 0x06"
     else:
         return "UNKNOWN"

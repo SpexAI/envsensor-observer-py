@@ -95,12 +95,12 @@ HCI_PIN_OR_KEY_MISSING = 0x06
 HCI_MEMORY_FULL = 0x07
 HCI_CONNECTION_TIMEOUT = 0x08
 HCI_MAX_NUMBER_OF_CONNECTIONS = 0x09
-HCI_MAX_NUMBER_OF_SCO_CONNECTIONS = 0x0a
-HCI_ACL_CONNECTION_EXISTS = 0x0b
-HCI_COMMAND_DISALLOWED = 0x0c
-HCI_REJECTED_LIMITED_RESOURCES = 0x0d
-HCI_REJECTED_SECURITY = 0x0e
-HCI_REJECTED_PERSONAL = 0x0f
+HCI_MAX_NUMBER_OF_SCO_CONNECTIONS = 0x0A
+HCI_ACL_CONNECTION_EXISTS = 0x0B
+HCI_COMMAND_DISALLOWED = 0x0C
+HCI_REJECTED_LIMITED_RESOURCES = 0x0D
+HCI_REJECTED_SECURITY = 0x0E
+HCI_REJECTED_PERSONAL = 0x0F
 HCI_HOST_TIMEOUT = 0x10
 HCI_UNSUPPORTED_FEATURE = 0x11
 HCI_INVALID_PARAMETERS = 0x12
@@ -111,12 +111,12 @@ HCI_CONNECTION_TERMINATED = 0x16
 HCI_REPEATED_ATTEMPTS = 0x17
 HCI_PAIRING_NOT_ALLOWED = 0x18
 HCI_UNKNOWN_LMP_PDU = 0x19
-HCI_UNSUPPORTED_REMOTE_FEATURE = 0x1a
-HCI_SCO_OFFSET_REJECTED = 0x1b
-HCI_SCO_INTERVAL_REJECTED = 0x1c
-HCI_AIR_MODE_REJECTED = 0x1d
-HCI_INVALID_LMP_PARAMETERS = 0x1e
-HCI_UNSPECIFIED_ERROR = 0x1f
+HCI_UNSUPPORTED_REMOTE_FEATURE = 0x1A
+HCI_SCO_OFFSET_REJECTED = 0x1B
+HCI_SCO_INTERVAL_REJECTED = 0x1C
+HCI_AIR_MODE_REJECTED = 0x1D
+HCI_INVALID_LMP_PARAMETERS = 0x1E
+HCI_UNSPECIFIED_ERROR = 0x1F
 HCI_UNSUPPORTED_LMP_PARAMETER_VALUE = 0x20
 HCI_ROLE_CHANGE_NOT_ALLOWED = 0x21
 HCI_LMP_RESPONSE_TIMEOUT = 0x22
@@ -127,11 +127,11 @@ HCI_UNIT_LINK_KEY_USED = 0x26
 HCI_QOS_NOT_SUPPORTED = 0x27
 HCI_INSTANT_PASSED = 0x28
 HCI_PAIRING_NOT_SUPPORTED = 0x29
-HCI_TRANSACTION_COLLISION = 0x2a
-HCI_QOS_UNACCEPTABLE_PARAMETER = 0x2c
-HCI_QOS_REJECTED = 0x2d
-HCI_CLASSIFICATION_NOT_SUPPORTED = 0x2e
-HCI_INSUFFICIENT_SECURITY = 0x2f
+HCI_TRANSACTION_COLLISION = 0x2A
+HCI_QOS_UNACCEPTABLE_PARAMETER = 0x2C
+HCI_QOS_REJECTED = 0x2D
+HCI_CLASSIFICATION_NOT_SUPPORTED = 0x2E
+HCI_INSUFFICIENT_SECURITY = 0x2F
 HCI_PARAMETER_OUT_OF_RANGE = 0x30
 HCI_ROLE_SWITCH_PENDING = 0x32
 HCI_SLOT_VIOLATION = 0x34
@@ -168,16 +168,15 @@ ADV_TYPE_MANUFACTURER_SPECIFIC_DATA = 0xFF
 
 # HCI commands. ---------------------------------------------------------------
 
+
 def hci_le_read_local_supported_features(sock):
     cmd_pkt = ""
-    bluez.hci_send_cmd(sock, OGF_LE_CTL, OCF_LE_READ_LOCAL_SUPPORTED_FEATURES,
-                       cmd_pkt)
+    bluez.hci_send_cmd(sock, OGF_LE_CTL, OCF_LE_READ_LOCAL_SUPPORTED_FEATURES, cmd_pkt)
 
 
 def hci_le_read_remote_used_features(sock, handle):
     cmd_pkt = struct.pack("<H", handle)
-    bluez.hci_send_cmd(sock, OGF_LE_CTL, OCF_LE_READ_REMOTE_USED_FEATURES,
-                       cmd_pkt)
+    bluez.hci_send_cmd(sock, OGF_LE_CTL, OCF_LE_READ_REMOTE_USED_FEATURES, cmd_pkt)
 
 
 # BLE and Bluetooth use the same disconnect command.
@@ -186,21 +185,34 @@ def hci_disconnect(sock, handle, reason=HCI_OE_USER_ENDED_CONNECTION):
     bluez.hci_send_cmd(sock, bluez.OGF_LINK_CTL, bluez.OCF_DISCONNECT, cmd_pkt)
 
 
-def hci_le_connect(sock, peer_bdaddr, interval=0x0004, window=0x004,
-                   initiator_filter=LE_FILTER_ALLOW_ALL,
-                   peer_bdaddr_type=LE_RANDOM_ADDRESS,
-                   own_bdaddr_type=LE_PUBLIC_ADDRESS,
-                   min_interval=0x000F, max_interval=0x000F,
-                   latency=0x0000, supervision_timeout=0x0C80,
-                   min_ce_length=0x0001, max_ce_length=0x0001):
-
+def hci_le_connect(
+    sock,
+    peer_bdaddr,
+    interval=0x0004,
+    window=0x004,
+    initiator_filter=LE_FILTER_ALLOW_ALL,
+    peer_bdaddr_type=LE_RANDOM_ADDRESS,
+    own_bdaddr_type=LE_PUBLIC_ADDRESS,
+    min_interval=0x000F,
+    max_interval=0x000F,
+    latency=0x0000,
+    supervision_timeout=0x0C80,
+    min_ce_length=0x0001,
+    max_ce_length=0x0001,
+):
     package_bdaddr = get_packed_bdaddr(peer_bdaddr)
-    cmd_pkt = struct.pack("<HHBB", interval, window, initiator_filter,
-                          peer_bdaddr_type)
+    cmd_pkt = struct.pack("<HHBB", interval, window, initiator_filter, peer_bdaddr_type)
     cmd_pkt += package_bdaddr
-    cmd_pkt += struct.pack("<BHHHHHH", own_bdaddr_type, min_interval,
-                           max_interval, latency, supervision_timeout,
-                           min_ce_length, max_ce_length)
+    cmd_pkt += struct.pack(
+        "<BHHHHHH",
+        own_bdaddr_type,
+        min_interval,
+        max_interval,
+        latency,
+        supervision_timeout,
+        min_ce_length,
+        max_ce_length,
+    )
     bluez.hci_send_cmd(sock, OGF_LE_CTL, OCF_LE_CREATE_CONN, cmd_pkt)
 
 
@@ -219,19 +231,26 @@ def hci_le_toggle_scan(sock, enable):
     # sent toggle command"
 
 
-def hci_le_set_scan_parameters(sock, scan_type=LE_SCAN_ACTIVE, interval=0x10,
-                               window=0x10, own_bdaddr_type=LE_RANDOM_ADDRESS,
-                               filter_type=LE_FILTER_ALLOW_ALL):
+def hci_le_set_scan_parameters(
+    sock,
+    scan_type=LE_SCAN_ACTIVE,
+    interval=0x10,
+    window=0x10,
+    own_bdaddr_type=LE_RANDOM_ADDRESS,
+    filter_type=LE_FILTER_ALLOW_ALL,
+):
     # setting up scan
 
     # interval and window are uint_16, so we pad them with 0x0
-    cmd_pkt = struct.pack("<BBBBBBB", scan_type, 0x0, interval, 0x0, window,
-                          own_bdaddr_type, filter_type)
+    cmd_pkt = struct.pack(
+        "<BBBBBBB", scan_type, 0x0, interval, 0x0, window, own_bdaddr_type, filter_type
+    )
     bluez.hci_send_cmd(sock, OGF_LE_CTL, OCF_LE_SET_SCAN_PARAMETERS, cmd_pkt)
     # sent scan parameters command
 
 
 # HCI Response parsing --------------------------------------------------------
+
 
 def hci_le_parse_response_packet(pkt):
     """
@@ -296,10 +315,11 @@ def _handle_num_completed_packets(pkt):
     result["num_connection_handles"] = num_connection_handles
     result["handles"] = []
     for i in range(num_connection_handles):
-        handle, = struct.unpack("<H", pkt[0:2])
-        completed_packets, = struct.unpack("<H", pkt[2:4])
+        (handle,) = struct.unpack("<H", pkt[0:2])
+        (completed_packets,) = struct.unpack("<H", pkt[2:4])
         result["handles"].append(
-            {"handle": handle, "num_completed_packets": completed_packets})
+            {"handle": handle, "num_completed_packets": completed_packets}
+        )
         pkt = pkt[4:]
     return result
 
@@ -311,7 +331,7 @@ def _handle_inquiry_result_with_rssi(pkt):
     result["num_inquiry_results"] = num_inquiry_results
     result["inquiry_results"] = []
     for i in range(num_inquiry_results):
-        addr = bluez.ba2str(pkt[(6 * i):(6 * i) + 6])
+        addr = bluez.ba2str(pkt[(6 * i) : (6 * i) + 6])
         rssi = struct.unpack("b", pkt[(13 * num_inquiry_results) + i])[0]
         result["inquiry_results"].append({"Address": addr, "RSSI": rssi})
     return result
@@ -324,7 +344,7 @@ def _handle_inquiry_result(pkt):
     result["num_inquiry_results"] = num_inquiry_results
     result["inquiry_results"] = []
     for i in range(num_inquiry_results):
-        addr = bluez.ba2str(pkt[(6 * i):(6 * i) + 6])
+        addr = bluez.ba2str(pkt[(6 * i) : (6 * i) + 6])
         result["inquiry_results"].append({"Address": addr})
     return result
 
@@ -333,10 +353,11 @@ def _handle_inquiry_result(pkt):
     result["num_connection_handles"] = num_connection_handles
     result["handles"] = []
     for i in range(num_connection_handles):
-        handle, = struct.unpack("<H", pkt[0:2])
-        completed_packets, = struct.unpack("<H", pkt[2:4])
+        (handle,) = struct.unpack("<H", pkt[0:2])
+        (completed_packets,) = struct.unpack("<H", pkt[2:4])
         result["handles"].append(
-            {"handle": handle, "num_completed_packets": completed_packets})
+            {"handle": handle, "num_completed_packets": completed_packets}
+        )
         pkt = pkt[4:]
     return result
 
@@ -364,8 +385,9 @@ def _handle_le_meta_event(pkt):
         raise NotImplementedError("EVT_LE_CONN_UPDATE_COMPLETE")
 
     elif subevent == EVT_LE_READ_REMOTE_USED_FEATURES_COMPLETE:
-        result["bluetooth_le_subevent_name"] = \
+        result["bluetooth_le_subevent_name"] = (
             "EVT_LE_READ_REMOTE_USED_FEATURES_COMPLETE"
+        )
         result.update(_handle_le_read_remote_used_features(pkt))
 
     elif subevent == EVT_LE_ADVERTISING_REPORT:
@@ -412,8 +434,9 @@ def _handle_le_connection_complete(pkt):
     result = {}
     status, handle, role, peer_bdaddr_type = struct.unpack("<BHBB", pkt[0:5])
     device_address = packed_bdaddr_to_string(pkt[5:11])
-    interval, latency, supervision_timeout, master_clock_accuracy = \
-        struct.unpack("<HHHB", pkt[11:])
+    interval, latency, supervision_timeout, master_clock_accuracy = struct.unpack(
+        "<HHHB", pkt[11:]
+    )
     result["status"] = status
     result["handle"] = handle
     result["role"] = role
@@ -453,10 +476,12 @@ def _handle_le_advertising_report(pkt):
         report["peer_bluetooth_address_type"] = bdaddr_type
 
         device_addr = packed_bdaddr_to_string(
-            pkt[report_pkt_offset + 3:report_pkt_offset + 9])
+            pkt[report_pkt_offset + 3 : report_pkt_offset + 9]
+        )
         report["peer_bluetooth_address"] = device_addr.upper()
-        report["peer_bluetooth_address_s"] = \
-            short_bt_address(report["peer_bluetooth_address"])
+        report["peer_bluetooth_address_s"] = short_bt_address(
+            report["peer_bluetooth_address"]
+        )
 
         report_data_length = pkt[report_pkt_offset + 9]
         report["report_metadata_length"] = report_data_length
@@ -480,13 +505,14 @@ def _handle_le_advertising_report(pkt):
             report["report_type_string"] = "UNKNOWN"
 
         if report_data_length > 0:
-            report["payload_binary"] = \
-                (pkt[report_pkt_offset +
-                 10:report_pkt_offset +
-                 10 + report_data_length + 1])
+            report["payload_binary"] = pkt[
+                report_pkt_offset + 10 : report_pkt_offset + 10 + report_data_length + 1
+            ]
             report["payload"] = packet_as_hex_string(
-                report["payload_binary"], flag_with_spacing=True,
-                flag_force_capitalize=True)
+                report["payload_binary"],
+                flag_with_spacing=True,
+                flag_force_capitalize=True,
+            )
 
         # Each report length is (2 (event type, bdaddr type) + 6 (the address)
         #    + 1 (data length field) + data length + 1 (rssi)) bytes long.
@@ -500,9 +526,10 @@ def _handle_le_advertising_report(pkt):
 
 # utility function ------------------------------------------------------------
 
+
 def get_packed_bdaddr(bdaddr_string):
     packable_addr = []
-    addr = bdaddr_string.split(':')
+    addr = bdaddr_string.split(":")
     addr.reverse()
     for b in addr:
         packable_addr.append(int(b, 16))
@@ -511,21 +538,20 @@ def get_packed_bdaddr(bdaddr_string):
 
 def packed_bdaddr_to_string(bdaddr_packed):
     reversed_bytes = bdaddr_packed[::-1]
-    return ':'.join(f'{b:02x}' for b in reversed_bytes)
+    return ":".join(f"{b:02x}" for b in reversed_bytes)
 
 
 def short_bt_address(btAddr):
-    return ''.join(btAddr.split(':'))
+    return "".join(btAddr.split(":"))
 
 
-def packet_as_hex_string(pkt, flag_with_spacing=False,
-                         flag_force_capitalize=False):
+def packet_as_hex_string(pkt, flag_with_spacing=False, flag_force_capitalize=False):
     packet = ""
     space = ""
-    if (flag_with_spacing):
+    if flag_with_spacing:
         space = " "
     packet = space.join(f"{b:02x}" for b in pkt)
-    if (flag_force_capitalize):
+    if flag_force_capitalize:
         packet = packet.upper()
     return packet
 
@@ -550,32 +576,33 @@ def reset_hci():
 
 
 def get_companyid(pkt):
-    return ((pkt[1] << 8) | pkt[0])
+    return (pkt[1] << 8) | pkt[0]
 
 
 # verify received beacon packet format
 def verify_beacon_packet(report):
     result = False
     # check payload length (31byte)
-    if (report["report_metadata_length"] != 31):
+    if report["report_metadata_length"] != 31:
         return result
     # check Company ID (OMRON = 0x02D5)
-    if (report["payload_binary"][4] !=
-            ADV_TYPE_MANUFACTURER_SPECIFIC_DATA):
+    if report["payload_binary"][4] != ADV_TYPE_MANUFACTURER_SPECIFIC_DATA:
         return result
-    if (get_companyid(report["payload_binary"][5:7]) != COMPANY_ID):
+    if get_companyid(report["payload_binary"][5:7]) != COMPANY_ID:
         return result
     # check shortened local name
-    if (report["payload_binary"][28] == ADV_TYPE_SHORT_LOCAL_NAME):
-        if ((report["payload_binary"][29:31] == "IM") or
-                (report["payload_binary"][29:31] == "EP")):
+    if report["payload_binary"][28] == ADV_TYPE_SHORT_LOCAL_NAME:
+        if (report["payload_binary"][29:31] == "IM") or (
+            report["payload_binary"][29:31] == "EP"
+        ):
             pass
         else:
             return result
-    elif (report["payload_binary"][27] == ADV_TYPE_SHORT_LOCAL_NAME):
-        if ((report["payload_binary"][28:31] == "Rbt") and
-            ((report["payload_binary"][7] == 0x01) or
-             (report["payload_binary"][7] == 0x02))):
+    elif report["payload_binary"][27] == ADV_TYPE_SHORT_LOCAL_NAME:
+        if (report["payload_binary"][28:31] == "Rbt") and (
+            (report["payload_binary"][7] == 0x01)
+            or (report["payload_binary"][7] == 0x02)
+        ):
             pass
         else:
             return result
@@ -588,22 +615,22 @@ def verify_beacon_packet(report):
 
 # classify beacon type sent from the sensor
 def classify_beacon_packet(report):
-    if (report["payload_binary"][29:31] == "IM"):
+    if report["payload_binary"][29:31] == "IM":
         return "IM"
-    elif (report["payload_binary"][29:31] == "EP"):
+    elif report["payload_binary"][29:31] == "EP":
         return "EP"
-    elif (report["payload_binary"][28:31] == "Rbt"):
-        if (report["payload_binary"][7] == 0x01):
+    elif report["payload_binary"][28:31] == "Rbt":
+        if report["payload_binary"][7] == 0x01:
             return "Rbt 0x01"
-        elif (report["payload_binary"][7] == 0x02):
+        elif report["payload_binary"][7] == 0x02:
             return "Rbt 0x02"
-        elif (report["payload_binary"][7] == 0x03):
+        elif report["payload_binary"][7] == 0x03:
             return "Rbt 0x03"
-        elif (report["payload_binary"][7] == 0x04):
+        elif report["payload_binary"][7] == 0x04:
             return "Rbt 0x04"
-        elif (report["payload_binary"][7] == 0x05):
+        elif report["payload_binary"][7] == 0x05:
             return "Rbt 0x05"
-        elif (report["payload_binary"][7] == 0x06):
+        elif report["payload_binary"][7] == 0x06:
             return "Rbt 0x06"
     else:
         return "UNKNOWN"

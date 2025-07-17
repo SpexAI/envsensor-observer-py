@@ -6,8 +6,7 @@ from logging.handlers import TimedRotatingFileHandler
 
 class CSVHandler(TimedRotatingFileHandler):
     def __init__(self, logfile, when, interval):
-        super(CSVHandler, self).\
-            __init__(logfile, when, interval)
+        super(CSVHandler, self).__init__(logfile, when, interval)
         self._header = ""
         self._log = None
 

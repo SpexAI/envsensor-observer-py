@@ -85,17 +85,19 @@ def parse_events(sock, loop_count=10):
 
     parsed_packet = ble.hci_le_parse_response_packet(pkt)
 
-    if "bluetooth_le_subevent_name" in parsed_packet and \
-            (parsed_packet["bluetooth_le_subevent_name"]
-                == 'EVT_LE_ADVERTISING_REPORT'):
-
+    if "bluetooth_le_subevent_name" in parsed_packet and (
+        parsed_packet["bluetooth_le_subevent_name"] == "EVT_LE_ADVERTISING_REPORT"
+    ):
         if debug:
             for report in parsed_packet["advertising_reports"]:
                 print("----------------------------------------------------")
-                print("Found BLE device:", report['peer_bluetooth_address'])
+                print("Found BLE device:", report["peer_bluetooth_address"])
                 print("Raw Advertising Packet:")
-                print(ble.packet_as_hex_string(pkt, flag_with_spacing=True,
-                                               flag_force_capitalize=True))
+                print(
+                    ble.packet_as_hex_string(
+                        pkt, flag_with_spacing=True, flag_force_capitalize=True
+                    )
+                )
                 print("")
                 for k, v in report.items():
                     if k == "payload_binary":
@@ -104,12 +106,13 @@ def parse_events(sock, loop_count=10):
                 print("")
 
         for report in parsed_packet["advertising_reports"]:
-            if (ble.verify_beacon_packet(report)):
+            if ble.verify_beacon_packet(report):
                 sensor = envsensor.SensorBeacon(
                     report["peer_bluetooth_address_s"],
                     ble.classify_beacon_packet(report),
                     GATEWAY,
-                    report["payload_binary"])
+                    report["payload_binary"],
+                )
 
                 index = find_sensor_in_list(sensor, sensor_list)
 
@@ -121,7 +124,7 @@ def parse_events(sock, loop_count=10):
                 lock = threading.Lock()
                 lock.acquire()
 
-                if (index != -1):  # BT Address found in sensor_list
+                if index != -1:  # BT Address found in sensor_list
                     if sensor.check_diff_seq_num(sensor_list[index]):
                         handling_data(sensor)
                     sensor.update(sensor_list[index])
@@ -152,27 +155,31 @@ def eval_sensor_state():
     global sensor_list
     nowtick = datetime.datetime.now()
     for sensor in sensor_list:
-        if (sensor.flag_active):
+        if sensor.flag_active:
             pastSec = (nowtick - sensor.tick_last_update).total_seconds()
-            if (pastSec > conf.INACTIVE_TIMEOUT_SECONDS):
+            if pastSec > conf.INACTIVE_TIMEOUT_SECONDS:
                 if debug:
                     print("timeout sensor : " + sensor.bt_address)
                 sensor.flag_active = False
     flag_update_sensor_status = True
-    timer = threading.Timer(conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS,
-                            eval_sensor_state)
+    timer = threading.Timer(conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS, eval_sensor_state)
     timer.setDaemon(True)
     timer.start()
 
 
 def print_sensor_state():
     print("----------------------------------------------------")
-    print("sensor status : %s (Intvl. %ssec)" % (datetime.datetime.today(),
-           conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS))
+    print(
+        "sensor status : %s (Intvl. %ssec)"
+        % (datetime.datetime.today(), conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS)
+    )
     for sensor in sensor_list:
-        print(" " + sensor.bt_address, ": %s :" % sensor.sensor_type,
+        print(
+            " " + sensor.bt_address,
+            ": %s :" % sensor.sensor_type,
             ("ACTIVE" if sensor.flag_active else "DEAD"),
-            "(%s)" % sensor.tick_last_update)
+            "(%s)" % sensor.tick_last_update,
+        )
     print("")
 
 
@@ -207,15 +214,19 @@ def find_sensor_in_list(sensor, List):
 
 # init fluentd interface
 def init_fluentd():
-    sender.setup(conf.FLUENTD_TAG, host=conf.FLUENTD_ADDRESS,
-                 port=conf.FLUENTD_PORT)
+    sender.setup(conf.FLUENTD_TAG, host=conf.FLUENTD_ADDRESS, port=conf.FLUENTD_PORT)
 
 
 # create database on influxdb
 def create_influx_database():
     v = "q=CREATE DATABASE " + conf.FLUENTD_INFLUXDB_DATABASE + "\n"
-    uri = ("http://" + conf.FLUENTD_INFLUXDB_ADDRESS + ":" +
-           conf.FLUENTD_INFLUXDB_PORT_STRING + "/query")
+    uri = (
+        "http://"
+        + conf.FLUENTD_INFLUXDB_ADDRESS
+        + ":"
+        + conf.FLUENTD_INFLUXDB_PORT_STRING
+        + "/query"
+    )
     r = requests.get(uri, params=v)
     if debug:
         print("-- create database : " + str(r.status_code))
@@ -224,10 +235,8 @@ def create_influx_database():
 # command line argument
 def arg_parse():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--debug', help='debug mode',
-                        action='store_true')
-    parser.add_argument('--version', action='version',
-                        version='%(prog)s ' + str(VER))
+    parser.add_argument("-d", "--debug", help="debug mode", action="store_true")
+    parser.add_argument("--version", action="version", version="%(prog)s " + str(VER))
     args = parser.parse_args()
     return args
 
@@ -260,11 +269,13 @@ if __name__ == "__main__":
             if conf.INFLUXDB_OUTPUT:
                 if debug:
                     print("-- initialize influxDB interface")
-                influx_client = InfluxDBClient(conf.INFLUXDB_ADDRESS,
-                                               conf.INFLUXDB_PORT,
-                                               conf.INFLUXDB_USER,
-                                               conf.INFLUXDB_PASSWORD,
-                                               conf.INFLUXDB_DATABASE)
+                influx_client = InfluxDBClient(
+                    conf.INFLUXDB_ADDRESS,
+                    conf.INFLUXDB_PORT,
+                    conf.INFLUXDB_USER,
+                    conf.INFLUXDB_PASSWORD,
+                    conf.INFLUXDB_DATABASE,
+                )
                 influx_client.create_database(conf.INFLUXDB_DATABASE)
                 if debug:
                     print("-- initialize influxDB interface : success")
@@ -299,13 +310,13 @@ if __name__ == "__main__":
                     os.makedirs(conf.CSV_DIR_PATH)
                 csv_path = conf.CSV_DIR_PATH + "/env_sensor_log.csv"
                 # create time-rotating log handler
-                loghndl = csv_logger.CSVHandler(csv_path, 'midnight', 1)
-                form = '%(message)s'
+                loghndl = csv_logger.CSVHandler(csv_path, "midnight", 1)
+                form = "%(message)s"
                 logFormatter = logging.Formatter(form)
                 loghndl.setFormatter(logFormatter)
 
                 # create logger
-                log = logging.getLogger('CSVLogger')
+                log = logging.getLogger("CSVLogger")
                 loghndl.configureHeaderWriter(envsensor.csv_header(), log)
                 log.addHandler(loghndl)
                 log.setLevel(logging.INFO)
@@ -359,14 +370,14 @@ if __name__ == "__main__":
         print("")
 
         # activate timer for sensor status evaluation
-        timer = threading.Timer(conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS,
-                                eval_sensor_state)
+        timer = threading.Timer(
+            conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS, eval_sensor_state
+        )
         timer.daemon = True
         timer.start()
 
         # preserve old filter setting
-        old_filter = sock.getsockopt(ble.bluez.SOL_HCI,
-                                     ble.bluez.HCI_FILTER, 14)
+        old_filter = sock.getsockopt(ble.bluez.SOL_HCI, ble.bluez.HCI_FILTER, 14)
         # perform a device inquiry on bluetooth device #0
         # The inquiry should last 8 * 1.28 = 10.24 seconds
         # before the inquiry is performed, bluez should flush its cache of
@@ -386,13 +397,13 @@ if __name__ == "__main__":
     except Exception as e:
         print("Exception: " + str(e))
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
     finally:
         if flag_scanning_started:
             # restore old filter setting
-            sock.setsockopt(ble.bluez.SOL_HCI, ble.bluez.HCI_FILTER,
-                            old_filter)
+            sock.setsockopt(ble.bluez.SOL_HCI, ble.bluez.HCI_FILTER, old_filter)
             ble.hci_le_disable_scan(sock)
         print("Exit")

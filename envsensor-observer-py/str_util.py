@@ -1,14 +1,16 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import struct
 
 
 def c2B(char):  # character to Byte conversion
-    return struct.unpack("B", char)[0]
+    # In Python 3 iterating over a bytes object returns int, so no unpack needed
+    return char if isinstance(char, int) else struct.unpack("B", char)[0]
 
 
 def c2b(char):  # character to signed char conversion
-    return struct.unpack("b", char)[0]
+    return char if isinstance(char, int) else struct.unpack("b", char)[0]
 
 
 def bytes2ushort(hi, lo):
@@ -33,7 +35,7 @@ def bytes2short(hi, lo):
 
 
 def ushort2short(val):
-    if ((val & 0x8000) == 0x8000):
+    if (val & 0x8000) == 0x8000:
         val_inv = val ^ 0b1111111111111111
         val_inv = val_inv + 1
         short_val = val_inv * (-1)

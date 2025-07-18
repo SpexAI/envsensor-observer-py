@@ -18,6 +18,8 @@ import struct
 # -----------------------------------------------------------------------------
 # Constants (unchanged)
 # -----------------------------------------------------------------------------
+debug = False
+
 # OMRON company ID (Bluetooth SIG.)
 COMPANY_ID = 0x02D5
 
@@ -492,13 +494,20 @@ def ogf_and_ocf_from_opcode(opcode):
     return ogf, ocf
 
 
-def reset_hci():
+def reset_hci(_debug):
+    global debug
+    debug = _debug
+    # TODO `sudo hciconfig hci0 reset` should be enough
     subprocess.call("sudo hciconfig hci0 down", shell=True)
+    if debug:
+        print("sudo hciconfig hci0 down")
     subprocess.call("sudo hciconfig hci0 up", shell=True)
+    if debug:
+        print("sudo hciconfig hci0 up")
 
 
-def get_companyid(pkt):
-    return (pkt[1] << 8) | pkt[0]
+def get_companyid(w):
+    return (w[1] << 8) | w[0]
 
 
 # -----------------------------------------------------------------------------
@@ -506,30 +515,52 @@ def get_companyid(pkt):
 # -----------------------------------------------------------------------------
 def verify_beacon_packet(report):
     if report["report_metadata_length"] != 31:
+        if debug:
+            print(f"Not metadata_length 31 but {report['report_metadata_length']}")
+        # return False
+    if report["report_metadata_length"] < 8:
         return False
-    if report["payload_binary"][4] != ADV_TYPE_MANUFACTURER_SPECIFIC_DATA:
+    payload_binary = report["payload_binary"]
+    manufacturer_specific_data = payload_binary[4]
+    company_id = get_companyid(payload_binary[5:7])
+    if manufacturer_specific_data != ADV_TYPE_MANUFACTURER_SPECIFIC_DATA:
+        if debug:
+            print(
+                f"Not MANUFACTURER_SPECIFIC_DATA 0xFF, but 0x{manufacturer_specific_data:02X}"
+            )
+            if company_id != COMPANY_ID:
+                print(f"Not OMRON 0x02D5 but 0x{company_id:04X}")
+            else:
+                print(f"But found OMRON 0x{company_id:04X}")
         return False
-    if get_companyid(report["payload_binary"][5:7]) != COMPANY_ID:
+    if company_id != COMPANY_ID:
+        if debug:
+            print(f"Not OMRON 0x02D5 but 0x{company_id:04X}")
         return False
 
     # shortened local name checks
-    if report["payload_binary"][28] == ADV_TYPE_SHORT_LOCAL_NAME:
-        name = report["payload_binary"][29:31]
+    if payload_binary[28] == ADV_TYPE_SHORT_LOCAL_NAME:
+        name = payload_binary[29:31]
         if name in (b"IM", b"EP"):
             return True
-    elif report["payload_binary"][27] == ADV_TYPE_SHORT_LOCAL_NAME:
-        name = report["payload_binary"][28:31]
-        if name == b"Rbt" and report["payload_binary"][7] in (0x01, 0x02):
+    elif payload_binary[27] == ADV_TYPE_SHORT_LOCAL_NAME:
+        name = payload_binary[28:31]
+        if name == b"Rbt" and payload_binary[7] in (0x01, 0x02):
             return True
+    if debug:
+        print(
+            f"Not ADV_TYPE_SHORT_LOCAL_NAME but 0x{payload_binary[27]:x} {payload_binary[28]:x}"
+        )
     return False
 
 
 def classify_beacon_packet(report):
-    if report["payload_binary"][29:31] == b"IM":
+    payload_binary = report["payload_binary"]
+    if payload_binary[29:31] == b"IM":
         return "IM"
-    elif report["payload_binary"][29:31] == b"EP":
+    elif payload_binary[29:31] == b"EP":
         return "EP"
-    elif report["payload_binary"][28:31] == b"Rbt":
+    elif payload_binary[28:31] == b"Rbt":
         return {
             0x01: "Rbt 0x01",
             0x02: "Rbt 0x02",

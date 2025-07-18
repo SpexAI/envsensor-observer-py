@@ -117,6 +117,7 @@ def parse_events(sock, loop_count=10):
 
                 if debug:
                     print("\t--- sensor data ---")
+                    print(f"\tindex: {index}")
                     sensor.debug_print()
                     print()
 
@@ -124,8 +125,12 @@ def parse_events(sock, loop_count=10):
                     if index != -1:  # known sensor
                         if sensor.check_diff_seq_num(sensor_list[index]):
                             handling_data(sensor)
+                            if debug:
+                                print("\tknown sensor")
                         sensor.update(sensor_list[index])
                     else:  # new sensor
+                        if debug:
+                            print("\tnew sensor")
                         sensor_list.append(sensor)
                         handling_data(sensor)
 
@@ -236,7 +241,7 @@ if __name__ == "__main__":
         try:
             if debug:
                 print("-- reseting bluetooth device")
-            ble.reset_hci()
+            ble.reset_hci(debug)
             if debug:
                 print("-- reseting bluetooth device : success")
         except Exception as e:
@@ -294,7 +299,7 @@ if __name__ == "__main__":
                 loghndl.configureHeaderWriter(envsensor.csv_header(), log)
                 log.addHandler(loghndl)
                 log.setLevel(logging.INFO)
-                log.info(envsensor.csv_header())
+                # log.info(envsensor.csv_header())
 
                 if debug:
                     print("-- initialize csv logger : success")

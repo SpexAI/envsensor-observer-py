@@ -20,7 +20,7 @@ import requests
 import socket
 import datetime
 import threading
-import struct
+# import struct
 
 import sensor_beacon as envsensor
 import conf
@@ -43,6 +43,7 @@ sensor_list = []
 flag_update_sensor_status = False
 debug = False
 log = None
+
 
 # ---------------------------------------------------------------------------
 def parse_events(sock, loop_count=10):
@@ -83,16 +84,20 @@ def parse_events(sock, loop_count=10):
 
     parsed_packet = ble.hci_le_parse_response_packet(pkt)
 
-    if ("bluetooth_le_subevent_name" in parsed_packet and
-            parsed_packet["bluetooth_le_subevent_name"] == 'EVT_LE_ADVERTISING_REPORT'):
-
+    if (
+        "bluetooth_le_subevent_name" in parsed_packet
+        and parsed_packet["bluetooth_le_subevent_name"] == "EVT_LE_ADVERTISING_REPORT"
+    ):
         if debug:
             for report in parsed_packet["advertising_reports"]:
                 print("----------------------------------------------------")
-                print("Found BLE device:", report['peer_bluetooth_address'])
+                print("Found BLE device:", report["peer_bluetooth_address"])
                 print("Raw Advertising Packet:")
-                print(ble.packet_as_hex_string(pkt, flag_with_spacing=True,
-                                               flag_force_capitalize=True))
+                print(
+                    ble.packet_as_hex_string(
+                        pkt, flag_with_spacing=True, flag_force_capitalize=True
+                    )
+                )
                 print()
                 for k, v in report.items():
                     if k != "payload_binary":
@@ -105,7 +110,8 @@ def parse_events(sock, loop_count=10):
                     report["peer_bluetooth_address_s"],
                     ble.classify_beacon_packet(report),
                     GATEWAY,
-                    report["payload_binary"])
+                    report["payload_binary"],
+                )
 
                 index = find_sensor_in_list(sensor, sensor_list)
 
@@ -115,13 +121,14 @@ def parse_events(sock, loop_count=10):
                     print()
 
                 with threading.Lock():
-                    if index != -1:          # known sensor
+                    if index != -1:  # known sensor
                         if sensor.check_diff_seq_num(sensor_list[index]):
                             handling_data(sensor)
                         sensor.update(sensor_list[index])
-                    else:                    # new sensor
+                    else:  # new sensor
                         sensor_list.append(sensor)
                         handling_data(sensor)
+
 
 # ---------------------------------------------------------------------------
 def handling_data(sensor):
@@ -131,6 +138,7 @@ def handling_data(sensor):
         sensor.forward_fluentd(event)
     if conf.CSV_OUTPUT:
         log.info(sensor.csv_format())
+
 
 # ---------------------------------------------------------------------------
 def eval_sensor_state():
@@ -145,21 +153,27 @@ def eval_sensor_state():
                 sensor.flag_active = False
 
     flag_update_sensor_status = True
-    timer = threading.Timer(conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS,
-                            eval_sensor_state)
-    timer.daemon = True      # ← new Python-3 attribute
+    timer = threading.Timer(conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS, eval_sensor_state)
+    timer.daemon = True  # ← new Python-3 attribute
     timer.start()
+
 
 # ---------------------------------------------------------------------------
 def print_sensor_state():
     print("----------------------------------------------------")
-    print("sensor status : %s (Intvl. %ssec)"
-          % (datetime.datetime.today(), conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS))
+    print(
+        "sensor status : %s (Intvl. %ssec)"
+        % (datetime.datetime.today(), conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS)
+    )
     for sensor in sensor_list:
-        print(" " + sensor.bt_address, ": %s :" % sensor.sensor_type,
-              ("ACTIVE" if sensor.flag_active else "DEAD"),
-              "(%s)" % sensor.tick_last_update)
+        print(
+            " " + sensor.bt_address,
+            ": %s :" % sensor.sensor_type,
+            ("ACTIVE" if sensor.flag_active else "DEAD"),
+            "(%s)" % sensor.tick_last_update,
+        )
     print()
+
 
 # ---------------------------------------------------------------------------
 # Utility helpers   (struct.unpack("B", c)[0] → c)
@@ -167,13 +181,15 @@ def print_sensor_state():
 def return_number_packet(pkt):
     myInteger = 0
     multiple = 256
-    for b in pkt:           # b is already int in Py3
+    for b in pkt:  # b is already int in Py3
         myInteger += b * multiple
         multiple = 1
     return myInteger
 
+
 def return_string_packet(pkt):
-    return ''.join('{:02x}'.format(b) for b in pkt)
+    return "".join("{:02x}".format(b) for b in pkt)
+
 
 def find_sensor_in_list(sensor, lst):
     for idx, s in enumerate(lst):
@@ -181,27 +197,30 @@ def find_sensor_in_list(sensor, lst):
             return idx
     return -1
 
+
 # ---------------------------------------------------------------------------
 def init_fluentd():
-    sender.setup(conf.FLUENTD_TAG,
-                 host=conf.FLUENTD_ADDRESS,
-                 port=conf.FLUENTD_PORT)
+    sender.setup(conf.FLUENTD_TAG, host=conf.FLUENTD_ADDRESS, port=conf.FLUENTD_PORT)
+
 
 def create_influx_database():
-    uri = (f"http://{conf.FLUENTD_INFLUXDB_ADDRESS}:"
-           f"{conf.FLUENTD_INFLUXDB_PORT_STRING}/query")
+    uri = (
+        f"http://{conf.FLUENTD_INFLUXDB_ADDRESS}:"
+        f"{conf.FLUENTD_INFLUXDB_PORT_STRING}/query"
+    )
     params = {"q": f"CREATE DATABASE {conf.FLUENTD_INFLUXDB_DATABASE}"}
     r = requests.get(uri, params=params)
     if debug:
         print("-- create database :", r.status_code)
 
+
 # ---------------------------------------------------------------------------
 def arg_parse():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--debug', help='debug mode', action='store_true')
-    parser.add_argument('--version', action='version',
-                        version='%(prog)s ' + str(VER))
+    parser.add_argument("-d", "--debug", help="debug mode", action="store_true")
+    parser.add_argument("--version", action="version", version="%(prog)s " + str(VER))
     return parser.parse_args()
+
 
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
@@ -231,9 +250,12 @@ if __name__ == "__main__":
                 if debug:
                     print("-- initialize influxDB interface")
                 influx_client = InfluxDBClient(
-                    conf.INFLUXDB_ADDRESS, conf.INFLUXDB_PORT,
-                    conf.INFLUXDB_USER, conf.INFLUXDB_PASSWORD,
-                    conf.INFLUXDB_DATABASE)
+                    conf.INFLUXDB_ADDRESS,
+                    conf.INFLUXDB_PORT,
+                    conf.INFLUXDB_USER,
+                    conf.INFLUXDB_PASSWORD,
+                    conf.INFLUXDB_DATABASE,
+                )
                 influx_client.create_database(conf.INFLUXDB_DATABASE)
                 if debug:
                     print("-- initialize influxDB interface : success")
@@ -265,10 +287,10 @@ if __name__ == "__main__":
 
                 os.makedirs(conf.CSV_DIR_PATH, exist_ok=True)
                 csv_path = os.path.join(conf.CSV_DIR_PATH, "env_sensor_log.csv")
-                loghndl = csv_logger.CSVHandler(csv_path, 'midnight', 1)
-                loghndl.setFormatter(logging.Formatter('%(message)s'))
+                loghndl = csv_logger.CSVHandler(csv_path, "midnight", 1)
+                loghndl.setFormatter(logging.Formatter("%(message)s"))
 
-                log = logging.getLogger('CSVLogger')
+                log = logging.getLogger("CSVLogger")
                 loghndl.configureHeaderWriter(envsensor.csv_header(), log)
                 log.addHandler(loghndl)
                 log.setLevel(logging.INFO)
@@ -307,7 +329,7 @@ if __name__ == "__main__":
             if debug:
                 print("-- ble scan started")
         except Exception as e:
-            print("failed to activate scan!!")
+            print("failed to activate scan! need sudo")
             print(str(e))
             sys.exit(1)
 
@@ -316,14 +338,14 @@ if __name__ == "__main__":
         print()
 
         # periodic sensor-state timer
-        timer = threading.Timer(conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS,
-                                eval_sensor_state)
+        timer = threading.Timer(
+            conf.CHECK_SENSOR_STATE_INTERVAL_SECONDS, eval_sensor_state
+        )
         timer.daemon = True
         timer.start()
 
         # HCI filter
-        old_filter = sock.getsockopt(ble.bluez.SOL_HCI,
-                                     ble.bluez.HCI_FILTER, 14)
+        old_filter = sock.getsockopt(ble.bluez.SOL_HCI, ble.bluez.HCI_FILTER, 14)
         flt = ble.bluez.hci_filter_new()
         ble.bluez.hci_filter_all_events(flt)
         ble.bluez.hci_filter_set_ptype(flt, ble.bluez.HCI_EVENT_PKT)
@@ -338,6 +360,7 @@ if __name__ == "__main__":
     except Exception as e:
         print("Exception:", str(e))
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

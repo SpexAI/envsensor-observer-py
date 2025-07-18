@@ -14,12 +14,12 @@ def c2b(char):  # character to signed char conversion
 
 
 def bytes2ushort(hi, lo):
-    ushort_val = ((hi << 8) | lo)
+    ushort_val = (hi << 8) | lo
     return ushort_val
 
 
 def bytes2uint32(highest, high, low, lowest):
-    uint32_val = ((highest << 24) | (high << 16) | (low << 8) | lowest)
+    uint32_val = (highest << 24) | (high << 16) | (low << 8) | lowest
     return uint32_val
 
 
